@@ -40,7 +40,7 @@ def calcSpeed(positions, fps):
         speeds.append(d/t)
 
 if __name__=="__main__":
-    cap = cv2.VideoCapture("tennis4.mp4")
+    cap = cv2.VideoCapture("tennis.mp4")
     fps = cap.get(cv2.CAP_PROP_FPS) 
 
     positions = {}
