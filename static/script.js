@@ -1,20 +1,33 @@
 var video;
-const frameTime = 1/30;
+var curFrame = 0;
 
 window.onload = () => {
     video = document.getElementById('video');
+    video.addEventListener("mousedown", function (evt) {
+        console.log("Mouse-X: " + (evt.offsetX));
+        console.log("Mouse-Y: " + (evt.offsetY));
+        evt.preventDefault();
+        var pos = {
+            frame: curFrame,
+            x: evt.offsetX/video.offsetWidth,
+            y: evt.offsetY/video.offsetHeight
+        }
+        $.post('/analysis', {
+            "pos": JSON.stringify(pos)
+        });
+    });
 }
 
 
-window.addEventListener('keypress', function (evt) {
+window.addEventListener("keypress", function (evt) {
     if (evt.key === ",") { //left arrow
         //one frame back
-        video.currentTime = Math.max(0, video.currentTime - frameTime);
+        curFrame = Math.max(0, curFrame - 1);
+        video.currentTime = curFrame/fps;
         console.log(video.currentTime);
     } else if (evt.key === ".") { //right arrow
-        //one frame forward
-        //Don't go past the end, otherwise you may get an error
-        video.currentTime = Math.min(video.duration, video.currentTime + frameTime);
+        curFrame = Math.min(video.duration*fps, curFrame + 1);
+        video.currentTime = curFrame/fps;
         console.log(video.currentTime);
     }
 });

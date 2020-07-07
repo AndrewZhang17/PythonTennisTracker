@@ -1,26 +1,28 @@
 from flask import Flask, render_template, Response, request
 from tracker import Tracker
+import json
 
 app = Flask(__name__, static_folder='static')
-tracker = Tracker("tennis.mp4")
+tracker = Tracker("static/tennis.mp4")
+count = 0
 
 @app.route('/')
-def root():    
-    return render_template('index.html', frames=tracker.frames)
+def root():
+    print(tracker.fps)
+    data = {
+        "fps": tracker.fps
+    }    
+    return render_template('index.html', data=data)
 
-def gen():
-    while True:
-        frame = tracker.get_frame()
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
-
-@app.route('/video_feed', methods=['GET', 'POST'])
+@app.route('/analysis', methods=['POST'])
 def video_feed():
-    print(request.form["frameNum"])
-    return Response(
-        gen(),
-        mimetype='multipart/x-mixed-replace; boundary=frame'
-    )
+    global count
+    pos = json.loads(request.form["pos"])
+    tracker.analyze_frame(pos["frame"], pos["x"], pos["y"])
+    count += 1
+    if count > 2:
+        print(tracker.calcSpeed()) 
+    return "OK"
 
 
 if __name__ == '__main__':
