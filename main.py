@@ -1,20 +1,26 @@
-import datetime
+from flask import Flask, render_template, Response, request
+from tracker import Tracker
 
-from flask import Flask, render_template
-
-app = Flask(__name__)
-
+app = Flask(__name__, static_folder='static')
+tracker = Tracker("tennis.mp4")
 
 @app.route('/')
-def root():
-    # For the sake of example, use static information to inflate the template.
-    # This will be replaced with real information in later steps.
-    dummy_times = [datetime.datetime(2018, 1, 1, 10, 0, 0),
-                   datetime.datetime(2018, 1, 2, 10, 30, 0),
-                   datetime.datetime(2018, 1, 3, 11, 0, 0),
-                   ]
+def root():    
+    return render_template('index.html', frames=tracker.frames)
 
-    return render_template('index.html', times=dummy_times)
+def gen():
+    while True:
+        frame = tracker.get_frame()
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
+
+@app.route('/video_feed', methods=['GET', 'POST'])
+def video_feed():
+    print(request.form["frameNum"])
+    return Response(
+        gen(),
+        mimetype='multipart/x-mixed-replace; boundary=frame'
+    )
 
 
 if __name__ == '__main__':
