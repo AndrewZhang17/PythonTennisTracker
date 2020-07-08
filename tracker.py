@@ -10,22 +10,37 @@ class Tracker(object):
         self.fps = self.video.get(cv2.CAP_PROP_FPS) 
         self.width = self.video.get(cv2.CAP_PROP_FRAME_WIDTH)
         self.height = self.video.get(cv2.CAP_PROP_FRAME_HEIGHT)
+        self.prevFrame = 0
         self.positions = {}
     
     def __del__(self):
         self.video.release()
         
     def analyze_frame(self, num, relX, relY):
-        print(num, relX, relY)
-        self.video.set(cv2.CAP_PROP_POS_FRAMES, num-1)
-        success, frame = self.video.read()
+        if num in self.positions or num == 0:
+            return
+        if num - self.prevFrame > 8 or num < self.prevFrame:
+            cur = max(0, num - 8)
+            self.video.set(cv2.CAP_PROP_POS_FRAMES, cur)
+            success, frame = self.video.read()
+            cur += 1
+            fgMask = self.backSub.apply(frame, learningRate=1)
+            while cur < num:
+                success, frame = self.video.read()
+                fgMask = self.backSub.apply(frame)
+                cur += 1
+        else:
+            cur = self.prevFrame
+            while cur < num:
+                success, frame = self.video.read()
+                fgMask = self.backSub.apply(frame)
+                cur += 1
+        self.prevFrame = num
         
         x = int(relX*self.width)
         y = int(relY*self.height)
-        print(self.width, self.height, frame.shape)
 
-
-        fgMask = self.backSub.apply(frame)
+        
         th, im_th = cv2.threshold(fgMask, 250, 255, cv2.THRESH_BINARY)
 
         im_floodfill = im_th.copy()
@@ -40,7 +55,6 @@ class Tracker(object):
 
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
         im_out = cv2.erode(im_out,kernel,iterations = 3)
-        cv2.imwrite("test.jpg", fgMask)
 
         contours, hierarchy = cv2.findContours(im_out, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         contours = sorted(contours, key = lambda x: cv2.contourArea(x), reverse=True)[:100]
@@ -78,9 +92,9 @@ class Tracker(object):
                 print(self.positions)
                 # cv2.ellipse(frame, ball, (255, 0, 0), 2)
                 # cv2.circle(frame, (int(ball[0][0]), int(ball[0][1])), 3, (0, 0, 255), 2)
-                cv2.circle(frame, pos, rad, (0, 0, 255))
-                cv2.imshow("Frame", frame)
-                cv2.waitKey(0)
+                # cv2.circle(frame, pos, rad, (0, 0, 255))
+                # cv2.imshow("Frame", frame)
+                # cv2.waitKey(0)
         if suc == False:
             print("fail, lmao")
         # clicked = False            
@@ -103,6 +117,7 @@ class Tracker(object):
         speeds = []
 
         frames = list(self.positions.keys())
+        frames.sort()
 
         for i in range(len(frames)-1):
             d = np.sqrt((self.positions[frames[i+1]]["pos"][0] - self.positions[frames[i]]["pos"][0])**2 + (self.positions[frames[i+1]]["pos"][1] - self.positions[frames[i]]["pos"][1])**2)
