@@ -3,7 +3,7 @@ from tracker import Tracker
 import json
 
 app = Flask(__name__, static_folder='static')
-tracker = Tracker("static/tennis.mp4")
+tracker = Tracker("static/tennis4.mp4")
 count = 0
 
 @app.route('/')
@@ -17,12 +17,12 @@ def root():
 @app.route('/analysis', methods=['POST'])
 def video_feed():
     global count
-    pos = json.loads(request.form["pos"])
-    tracker.analyze_frame(pos["frame"], pos["x"], pos["y"])
-    count += 1
-    if count > 2:
-        print(tracker.calcSpeed()) 
-    return "OK"
+    pos = json.loads(request.form["data"])
+    if pos == 0:
+        result = tracker.calcSpeed()
+    else:
+        result = tracker.analyze_frame(pos["frame"], pos["x"], pos["y"])
+    return result
 
 
 if __name__ == '__main__':

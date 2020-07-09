@@ -17,8 +17,10 @@ class Tracker(object):
         self.video.release()
         
     def analyze_frame(self, num, relX, relY):
-        if num in self.positions or num == 0:
-            return
+        if num in self.positions:
+            return "Frame already processed."
+        if num == 0:
+            return "Cannot process first frame."
         if num - self.prevFrame > 8 or num < self.prevFrame:
             cur = max(0, num - 8)
             self.video.set(cv2.CAP_PROP_POS_FRAMES, cur)
@@ -35,7 +37,6 @@ class Tracker(object):
                 success, frame = self.video.read()
                 fgMask = self.backSub.apply(frame)
                 cur += 1
-        self.prevFrame = num
         
         x = int(relX*self.width)
         y = int(relY*self.height)
@@ -96,20 +97,21 @@ class Tracker(object):
                 # cv2.imshow("Frame", frame)
                 # cv2.waitKey(0)
         if suc == False:
-            print("fail, lmao")
-        # clicked = False            
-
-        # if keyboard == ord('q') or keyboard == 27:
-        # break
-
-        # else:
-        # break
+            return "Ball not found :["
+        
+        self.prevFrame = num
+        return "Ball Found!"
     
     def calcSpeed(self):
         avgRad = 0
+        length = len(self.positions)
+
+        if length < 2:
+            return "Not enough measurements :["
+
         for i in self.positions.values():
             avgRad += i["rad"]
-        avgRad /= len(self.positions)
+        avgRad /= length
         print(avgRad)
 
         metersPerPx = BALLSIZE/(avgRad*2)
@@ -119,14 +121,14 @@ class Tracker(object):
         frames = list(self.positions.keys())
         frames.sort()
 
-        for i in range(len(frames)-1):
+        for i in range(length-1):
             d = np.sqrt((self.positions[frames[i+1]]["pos"][0] - self.positions[frames[i]]["pos"][0])**2 + (self.positions[frames[i+1]]["pos"][1] - self.positions[frames[i]]["pos"][1])**2)
             d *= metersPerPx
             t = (frames[i+1] - frames[i])/self.fps
             print(d/t*2.237)
             speeds.append(d/t)
         
-        return np.average(speeds)*2.237
+        return str(int(np.average(speeds)*2.237)) + " mph"
 
 
 

@@ -9,13 +9,19 @@
         <script type="text/javascript" src="{{ url_for('static', filename='script.js') }}"></script>
     </head>
     <body>
-        <h1>Video Streaming Demonstration</h1>
+        <h1 id="title">Video Streaming Demonstration</h1>
         
         <div id="video-container">
             <video id="video">
-                <source src="{{ url_for('static', filename='tennis.mp4') }}" type="video/mp4">
+                <source src="{{ url_for('static', filename='tennis4.mp4') }}" type="video/mp4">
             </video>
         </div>
+        <div id="button-container">
+            <button onclick="prevFrame()"><</button>
+            <button onclick="done()">Done</button>
+            <button onclick="nextFrame()">></button>
+        </div>
+        <h2 id="result"></h2>
 
     </body>
 </html>
